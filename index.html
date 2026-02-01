@@ -1,21 +1,964 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Typing Speed Test</title>
-  <link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>⌨️ Typing Speed Test</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Space+Mono:wght@400;700&display=swap');
+        
+        :root {
+            --bg-dark: #131313;
+            --text-light: #E0E0E0;
+            --text-white: #FFFFFF;
+            --accent-primary: #fef96c;
+            --accent-secondary: #70d4ff;
+            --neon-glow-primary: 0 0 10px #fef96c, 0 0 20px #fef96c, 0 0 30px #fef96c;
+            --neon-glow-secondary: 0 0 10px #70d4ff, 0 0 20px #70d4ff, 0 0 30px #70d4ff;
+            --error-color: #ff3366;
+            --success-color: #00ff88;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Space Mono', monospace;
+            background: var(--bg-dark);
+            color: var(--text-light);
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+        }
+        
+        /* Animated background grid */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                linear-gradient(rgba(254, 249, 108, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(112, 212, 255, 0.03) 1px, transparent 1px);
+            background-size: 50px 50px;
+            animation: gridScroll 20s linear infinite;
+            pointer-events: none;
+            z-index: 0;
+        }
+        
+        @keyframes gridScroll {
+            0% { transform: translateY(0); }
+            100% { transform: translateY(50px); }
+        }
+        
+        /* Scanline effect */
+        body::after {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(
+                to bottom,
+                transparent 50%,
+                rgba(254, 249, 108, 0.02) 50%
+            );
+            background-size: 100% 4px;
+            pointer-events: none;
+            z-index: 1;
+            animation: scanline 8s linear infinite;
+        }
+        
+        @keyframes scanline {
+            0% { transform: translateY(0); }
+            100% { transform: translateY(4px); }
+        }
+        
+        main {
+            position: relative;
+            z-index: 2;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem 1rem;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 3rem;
+            animation: fadeInDown 0.8s ease-out;
+        }
+        
+        h1 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: clamp(2rem, 8vw, 4rem);
+            font-weight: 900;
+            color: var(--accent-primary);
+            text-shadow: var(--neon-glow-primary);
+            letter-spacing: 0.1em;
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+        }
+        
+        .subtitle {
+            font-size: clamp(0.9rem, 2vw, 1.1rem);
+            color: var(--accent-secondary);
+            text-shadow: var(--neon-glow-secondary);
+            letter-spacing: 0.3em;
+            text-transform: uppercase;
+        }
+        
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        /* Mode selector */
+        .mode-selector {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            margin-bottom: 2rem;
+            animation: fadeIn 1s ease-out 0.3s both;
+        }
+        
+        .mode-btn {
+            font-family: 'Orbitron', sans-serif;
+            font-size: clamp(0.9rem, 2vw, 1.1rem);
+            padding: 1rem 2rem;
+            background: transparent;
+            color: var(--text-light);
+            border: 2px solid var(--accent-secondary);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            position: relative;
+            overflow: hidden;
+            min-width: 48px;
+            min-height: 48px;
+        }
+        
+        .mode-btn::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            background: var(--accent-secondary);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            transition: width 0.5s ease, height 0.5s ease;
+            z-index: -1;
+        }
+        
+        .mode-btn:hover::before {
+            width: 300px;
+            height: 300px;
+        }
+        
+        .mode-btn:hover {
+            color: var(--bg-dark);
+            box-shadow: var(--neon-glow-secondary);
+        }
+        
+        .mode-btn.active {
+            background: var(--accent-primary);
+            color: var(--bg-dark);
+            border-color: var(--accent-primary);
+            box-shadow: var(--neon-glow-primary);
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        /* Test area */
+        .test-container {
+            background: rgba(255, 255, 255, 0.02);
+            border: 2px solid rgba(112, 212, 255, 0.3);
+            padding: 2rem;
+            margin-bottom: 2rem;
+            position: relative;
+            backdrop-filter: blur(10px);
+            animation: fadeInUp 1s ease-out 0.5s both;
+        }
+        
+        .test-container::before {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            bottom: -2px;
+            background: linear-gradient(45deg, var(--accent-secondary), var(--accent-primary));
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            z-index: -1;
+        }
+        
+        .test-container:hover::before {
+            opacity: 0.1;
+        }
+        
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        /* WPM Test */
+        #wpm-text {
+            font-size: clamp(1rem, 2.5vw, 1.3rem);
+            line-height: 1.8;
+            margin-bottom: 1.5rem;
+            padding: 1.5rem;
+            background: rgba(0, 0, 0, 0.3);
+            border-left: 4px solid var(--accent-primary);
+            letter-spacing: 0.02em;
+        }
+        
+        .char {
+            position: relative;
+            transition: all 0.1s ease;
+        }
+        
+        .char.correct {
+            color: var(--success-color);
+            text-shadow: 0 0 5px var(--success-color);
+        }
+        
+        .char.incorrect {
+            color: var(--error-color);
+            background: rgba(255, 51, 102, 0.2);
+            text-shadow: 0 0 5px var(--error-color);
+        }
+        
+        .char.current {
+            animation: blink 1s infinite;
+            background: rgba(254, 249, 108, 0.2);
+        }
+        
+        @keyframes blink {
+            0%, 50%, 100% { opacity: 1; }
+            25%, 75% { opacity: 0.5; }
+        }
+        
+        /* LPM Test */
+        #lpm-display {
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+        
+        .target-char {
+            font-family: 'Orbitron', sans-serif;
+            font-size: clamp(4rem, 15vw, 8rem);
+            font-weight: 900;
+            color: var(--accent-primary);
+            text-shadow: var(--neon-glow-primary);
+            display: inline-block;
+            animation: pulse 2s ease-in-out infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+        
+        /* Input field */
+        #typing-input {
+            width: 100%;
+            font-family: 'Space Mono', monospace;
+            font-size: clamp(1rem, 2.5vw, 1.2rem);
+            padding: 1rem 1.5rem;
+            background: rgba(0, 0, 0, 0.5);
+            border: 2px solid var(--accent-secondary);
+            color: var(--text-white);
+            outline: none;
+            transition: all 0.3s ease;
+            letter-spacing: 0.05em;
+        }
+        
+        #typing-input:focus {
+            border-color: var(--accent-primary);
+            box-shadow: var(--neon-glow-primary);
+            background: rgba(0, 0, 0, 0.7);
+        }
+        
+        #typing-input::placeholder {
+            color: rgba(224, 224, 224, 0.4);
+        }
+        
+        /* Stats dashboard */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+            animation: fadeIn 1s ease-out 0.7s both;
+        }
+        
+        .stat-card {
+            background: rgba(0, 0, 0, 0.4);
+            padding: 1.5rem;
+            border: 2px solid rgba(112, 212, 255, 0.3);
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+        
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(254, 249, 108, 0.1), transparent);
+            transition: left 0.5s ease;
+        }
+        
+        .stat-card:hover::before {
+            left: 100%;
+        }
+        
+        .stat-card:hover {
+            border-color: var(--accent-primary);
+            transform: translateY(-5px);
+        }
+        
+        .stat-label {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            color: var(--accent-secondary);
+            margin-bottom: 0.5rem;
+        }
+        
+        .stat-value {
+            font-family: 'Orbitron', sans-serif;
+            font-size: clamp(1.8rem, 4vw, 2.5rem);
+            font-weight: 700;
+            color: var(--accent-primary);
+            text-shadow: 0 0 10px rgba(254, 249, 108, 0.5);
+        }
+        
+        /* Control buttons */
+        .controls {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+            animation: fadeIn 1s ease-out 0.9s both;
+        }
+        
+        .control-btn {
+            font-family: 'Orbitron', sans-serif;
+            font-size: clamp(0.9rem, 2vw, 1rem);
+            padding: 1rem 2.5rem;
+            background: var(--accent-primary);
+            color: var(--bg-dark);
+            border: none;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            font-weight: 700;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            min-width: 48px;
+            min-height: 48px;
+            box-shadow: 0 0 20px rgba(254, 249, 108, 0.3);
+        }
+        
+        .control-btn::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            background: var(--accent-secondary);
+            transform: translate(-50%, -50%);
+            transition: width 0.5s ease, height 0.5s ease;
+            border-radius: 50%;
+        }
+        
+        .control-btn:hover::before {
+            width: 400px;
+            height: 400px;
+        }
+        
+        .control-btn:hover {
+            box-shadow: var(--neon-glow-primary);
+            transform: scale(1.05);
+        }
+        
+        .control-btn:active {
+            transform: scale(0.95);
+        }
+        
+        .control-btn span {
+            position: relative;
+            z-index: 1;
+        }
+        
+        /* Hidden elements */
+        .hidden {
+            display: none !important;
+        }
+        
+        /* Timer */
+        .timer {
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+        
+        .timer-value {
+            font-family: 'Orbitron', sans-serif;
+            font-size: clamp(1.5rem, 4vw, 2rem);
+            color: var(--accent-secondary);
+            text-shadow: var(--neon-glow-secondary);
+        }
+        
+        /* Results modal */
+        .results-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            padding: 1rem;
+            animation: fadeIn 0.3s ease-out;
+        }
+        
+        .results-content {
+            background: var(--bg-dark);
+            border: 3px solid var(--accent-primary);
+            padding: 2rem;
+            max-width: 500px;
+            width: 100%;
+            position: relative;
+            animation: scaleIn 0.5s ease-out;
+            box-shadow: 0 0 50px rgba(254, 249, 108, 0.5);
+        }
+        
+        @keyframes scaleIn {
+            from {
+                transform: scale(0.8);
+                opacity: 0;
+            }
+            to {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+        
+        .results-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: clamp(1.5rem, 5vw, 2rem);
+            text-align: center;
+            color: var(--accent-primary);
+            text-shadow: var(--neon-glow-primary);
+            margin-bottom: 1.5rem;
+            text-transform: uppercase;
+        }
+        
+        .results-stats {
+            margin-bottom: 2rem;
+        }
+        
+        .result-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 1rem;
+            margin-bottom: 0.5rem;
+            background: rgba(255, 255, 255, 0.05);
+            border-left: 3px solid var(--accent-secondary);
+        }
+        
+        .result-label {
+            color: var(--text-light);
+            font-size: 1rem;
+        }
+        
+        .result-value {
+            font-family: 'Orbitron', sans-serif;
+            color: var(--accent-primary);
+            font-weight: 700;
+            font-size: 1.2rem;
+        }
+        
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            main {
+                padding: 1rem;
+            }
+            
+            .test-container {
+                padding: 1.5rem 1rem;
+            }
+            
+            .mode-selector {
+                flex-direction: column;
+            }
+            
+            .mode-btn {
+                width: 100%;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .controls {
+                flex-direction: column;
+            }
+            
+            .control-btn {
+                width: 100%;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            #wpm-text {
+                font-size: 1rem;
+                padding: 1rem;
+            }
+            
+            .target-char {
+                font-size: 3.5rem;
+            }
+            
+            .results-content {
+                padding: 1.5rem 1rem;
+            }
+        }
+    </style>
 </head>
 <body>
-  <div class="container">
-    <h1>Typing Speed Test</h1>
-    <div class="buttons">
-      <button id="game1">Predetermined Paragraphs</button>
-      <button id="game2">Random Characters</button>
+    <main>
+        <header>
+            <h1>TypeSpeed Test</h1>
+            <p class="subtitle">Test Your Speed</p>
+        </header>
+        
+        <!-- Mode Selection -->
+        <div class="mode-selector">
+            <button class="mode-btn active" data-mode="wpm">WPM Test</button>
+            <button class="mode-btn" data-mode="lpm">LPM Test</button>
+        </div>
+        
+        <!-- WPM Test -->
+        <section id="wpm-test" class="test-container">
+            <div class="timer">
+                <div class="timer-value">Time: <span id="wpm-timer">60</span>s</div>
+            </div>
+            <div id="wpm-text"></div>
+            <input type="text" id="typing-input" placeholder="Click here and start typing..." autocomplete="off">
+        </section>
+        
+        <!-- LPM Test -->
+        <section id="lpm-test" class="test-container hidden">
+            <div class="timer">
+                <div class="timer-value">Time: <span id="lpm-timer">30</span>s</div>
+            </div>
+            <div id="lpm-display">
+                <div class="target-char" id="target-char">A</div>
+            </div>
+            <input type="text" id="lpm-input" placeholder="Type the character above..." autocomplete="off" maxlength="1">
+        </section>
+        
+        <!-- Stats Dashboard -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-label">Speed</div>
+                <div class="stat-value"><span id="speed-stat">0</span> <span id="speed-unit">WPM</span></div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Accuracy</div>
+                <div class="stat-value"><span id="accuracy-stat">100</span>%</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Characters</div>
+                <div class="stat-value"><span id="chars-stat">0</span></div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Errors</div>
+                <div class="stat-value"><span id="errors-stat">0</span></div>
+            </div>
+        </div>
+        
+        <!-- Controls -->
+        <div class="controls">
+            <button class="control-btn" id="restart-btn"><span>Restart</span></button>
+        </div>
+    </main>
+    
+    <!-- Results Modal -->
+    <div id="results-modal" class="results-modal hidden">
+        <div class="results-content">
+            <h2 class="results-title">Test Complete!</h2>
+            <div class="results-stats">
+                <div class="result-item">
+                    <span class="result-label">Final Speed:</span>
+                    <span class="result-value"><span id="final-speed">0</span> <span id="final-unit">WPM</span></span>
+                </div>
+                <div class="result-item">
+                    <span class="result-label">Accuracy:</span>
+                    <span class="result-value"><span id="final-accuracy">100</span>%</span>
+                </div>
+                <div class="result-item">
+                    <span class="result-label">Total Characters:</span>
+                    <span class="result-value"><span id="final-chars">0</span></span>
+                </div>
+                <div class="result-item">
+                    <span class="result-label">Total Errors:</span>
+                    <span class="result-value"><span id="final-errors">0</span></span>
+                </div>
+            </div>
+            <div class="controls">
+                <button class="control-btn" id="close-results-btn"><span>Try Again</span></button>
+            </div>
+        </div>
     </div>
-  </div>
 
-  <script src="paragraphs.js"></script>
-  <script src="script.js"></script>
+    <script>
+        // Predetermined paragraphs for WPM test
+        const paragraphs = [
+            "The quick brown fox jumps over the lazy dog. This sentence contains every letter of the alphabet and is perfect for typing practice. Speed and accuracy are both important when measuring typing proficiency.",
+            "Technology has revolutionized the way we communicate and work. From smartphones to cloud computing, innovation continues to shape our daily lives. The ability to type quickly and accurately is now more important than ever.",
+            "Learning to type efficiently can greatly improve your productivity. Practice makes perfect, and with consistent effort, anyone can increase their typing speed. Focus on accuracy first, and speed will naturally follow.",
+            "The internet has connected billions of people around the world. Information is now available at our fingertips, making knowledge more accessible than ever before. Digital literacy skills, including typing, are essential in modern society.",
+            "Typing is a fundamental skill in the digital age. Whether you're writing emails, coding, or creating content, the faster you can type, the more efficient you become. Regular practice is key to improvement."
+        ];
+        
+        // State management
+        let currentMode = 'wpm';
+        let testStarted = false;
+        let testActive = false;
+        let startTime = null;
+        let timerInterval = null;
+        let currentParagraph = '';
+        let currentCharIndex = 0;
+        let correctChars = 0;
+        let totalChars = 0;
+        let errors = 0;
+        
+        // LPM specific
+        let lpmCharacters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+        let currentTargetChar = '';
+        let lpmCorrectChars = 0;
+        
+        // DOM elements
+        const modeBtns = document.querySelectorAll('.mode-btn');
+        const wpmTest = document.getElementById('wpm-test');
+        const lpmTest = document.getElementById('lpm-test');
+        const wpmTextDisplay = document.getElementById('wpm-text');
+        const typingInput = document.getElementById('typing-input');
+        const lpmInput = document.getElementById('lpm-input');
+        const targetCharDisplay = document.getElementById('target-char');
+        const wpmTimerDisplay = document.getElementById('wpm-timer');
+        const lpmTimerDisplay = document.getElementById('lpm-timer');
+        const speedStat = document.getElementById('speed-stat');
+        const speedUnit = document.getElementById('speed-unit');
+        const accuracyStat = document.getElementById('accuracy-stat');
+        const charsStat = document.getElementById('chars-stat');
+        const errorsStat = document.getElementById('errors-stat');
+        const restartBtn = document.getElementById('restart-btn');
+        const resultsModal = document.getElementById('results-modal');
+        const closeResultsBtn = document.getElementById('close-results-btn');
+        
+        // Initialize
+        function init() {
+            loadNewParagraph();
+            setupEventListeners();
+        }
+        
+        // Setup event listeners
+        function setupEventListeners() {
+            modeBtns.forEach(btn => {
+                btn.addEventListener('click', () => switchMode(btn.dataset.mode));
+            });
+            
+            typingInput.addEventListener('input', handleWPMInput);
+            typingInput.addEventListener('focus', handleInputFocus);
+            
+            lpmInput.addEventListener('input', handleLPMInput);
+            lpmInput.addEventListener('focus', handleInputFocus);
+            
+            restartBtn.addEventListener('click', restartTest);
+            closeResultsBtn.addEventListener('click', closeResults);
+        }
+        
+        // Switch between modes
+        function switchMode(mode) {
+            currentMode = mode;
+            modeBtns.forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.mode === mode);
+            });
+            
+            if (mode === 'wpm') {
+                wpmTest.classList.remove('hidden');
+                lpmTest.classList.add('hidden');
+                speedUnit.textContent = 'WPM';
+            } else {
+                wpmTest.classList.add('hidden');
+                lpmTest.classList.remove('hidden');
+                speedUnit.textContent = 'LPM';
+            }
+            
+            restartTest();
+        }
+        
+        // Load new paragraph for WPM test
+        function loadNewParagraph() {
+            const randomIndex = Math.floor(Math.random() * paragraphs.length);
+            currentParagraph = paragraphs[randomIndex];
+            displayParagraph();
+        }
+        
+        // Display paragraph with character spans
+        function displayParagraph() {
+            wpmTextDisplay.innerHTML = currentParagraph
+                .split('')
+                .map((char, index) => `<span class="char ${index === 0 ? 'current' : ''}">${char}</span>`)
+                .join('');
+        }
+        
+        // Generate random character for LPM test
+        function generateRandomChar() {
+            const randomIndex = Math.floor(Math.random() * lpmCharacters.length);
+            currentTargetChar = lpmCharacters[randomIndex];
+            targetCharDisplay.textContent = currentTargetChar;
+        }
+        
+        // Handle input focus
+        function handleInputFocus() {
+            if (!testStarted) {
+                startTest();
+            }
+        }
+        
+        // Start test
+        function startTest() {
+            testStarted = true;
+            testActive = true;
+            startTime = Date.now();
+            
+            if (currentMode === 'wpm') {
+                startTimer(60, wpmTimerDisplay);
+            } else {
+                generateRandomChar();
+                startTimer(30, lpmTimerDisplay);
+            }
+        }
+        
+        // Start timer
+        function startTimer(duration, display) {
+            let timeLeft = duration;
+            display.textContent = timeLeft;
+            
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                display.textContent = timeLeft;
+                
+                if (timeLeft <= 0) {
+                    endTest();
+                }
+            }, 1000);
+        }
+        
+        // Handle WPM input
+        function handleWPMInput(e) {
+            if (!testActive) return;
+            
+            const inputValue = e.target.value;
+            const chars = wpmTextDisplay.querySelectorAll('.char');
+            
+            // Update character display
+            chars.forEach((char, index) => {
+                char.classList.remove('correct', 'incorrect', 'current');
+                
+                if (index < inputValue.length) {
+                    if (inputValue[index] === currentParagraph[index]) {
+                        char.classList.add('correct');
+                        if (index >= currentCharIndex) {
+                            correctChars++;
+                            currentCharIndex = index + 1;
+                        }
+                    } else {
+                        char.classList.add('incorrect');
+                    }
+                } else if (index === inputValue.length) {
+                    char.classList.add('current');
+                }
+            });
+            
+            totalChars = inputValue.length;
+            errors = inputValue.split('').filter((char, index) => 
+                char !== currentParagraph[index]
+            ).length;
+            
+            updateStats();
+            
+            // Check if paragraph is completed
+            if (inputValue.length === currentParagraph.length && 
+                inputValue === currentParagraph) {
+                loadNewParagraph();
+                e.target.value = '';
+                currentCharIndex = 0;
+            }
+        }
+        
+        // Handle LPM input
+        function handleLPMInput(e) {
+            if (!testActive) return;
+            
+            const inputChar = e.target.value.toUpperCase();
+            
+            if (inputChar === currentTargetChar) {
+                lpmCorrectChars++;
+                correctChars++;
+            } else if (inputChar !== '') {
+                errors++;
+            }
+            
+            if (inputChar !== '') {
+                totalChars++;
+                generateRandomChar();
+                e.target.value = '';
+                updateStats();
+            }
+        }
+        
+        // Update statistics
+        function updateStats() {
+            const elapsedMinutes = (Date.now() - startTime) / 60000;
+            
+            let speed;
+            if (currentMode === 'wpm') {
+                const words = correctChars / 5; // Average word length is 5 characters
+                speed = Math.round(words / elapsedMinutes) || 0;
+            } else {
+                speed = Math.round(correctChars / elapsedMinutes) || 0;
+            }
+            
+            const accuracy = totalChars > 0 
+                ? Math.round(((totalChars - errors) / totalChars) * 100) 
+                : 100;
+            
+            speedStat.textContent = speed;
+            accuracyStat.textContent = accuracy;
+            charsStat.textContent = totalChars;
+            errorsStat.textContent = errors;
+        }
+        
+        // End test
+        function endTest() {
+            testActive = false;
+            clearInterval(timerInterval);
+            
+            // Disable inputs
+            typingInput.disabled = true;
+            lpmInput.disabled = true;
+            
+            // Show results
+            showResults();
+        }
+        
+        // Show results modal
+        function showResults() {
+            const elapsedMinutes = (Date.now() - startTime) / 60000;
+            
+            let finalSpeed;
+            if (currentMode === 'wpm') {
+                const words = correctChars / 5;
+                finalSpeed = Math.round(words / elapsedMinutes) || 0;
+            } else {
+                finalSpeed = Math.round(correctChars / elapsedMinutes) || 0;
+            }
+            
+            const finalAccuracy = totalChars > 0 
+                ? Math.round(((totalChars - errors) / totalChars) * 100) 
+                : 100;
+            
+            document.getElementById('final-speed').textContent = finalSpeed;
+            document.getElementById('final-unit').textContent = currentMode === 'wpm' ? 'WPM' : 'LPM';
+            document.getElementById('final-accuracy').textContent = finalAccuracy;
+            document.getElementById('final-chars').textContent = totalChars;
+            document.getElementById('final-errors').textContent = errors;
+            
+            resultsModal.classList.remove('hidden');
+        }
+        
+        // Close results and restart
+        function closeResults() {
+            resultsModal.classList.add('hidden');
+            restartTest();
+        }
+        
+        // Restart test
+        function restartTest() {
+            testStarted = false;
+            testActive = false;
+            startTime = null;
+            currentCharIndex = 0;
+            correctChars = 0;
+            totalChars = 0;
+            errors = 0;
+            lpmCorrectChars = 0;
+            
+            clearInterval(timerInterval);
+            
+            // Reset inputs
+            typingInput.value = '';
+            typingInput.disabled = false;
+            lpmInput.value = '';
+            lpmInput.disabled = false;
+            
+            // Reset displays
+            if (currentMode === 'wpm') {
+                loadNewParagraph();
+                wpmTimerDisplay.textContent = '60';
+            } else {
+                generateRandomChar();
+                lpmTimerDisplay.textContent = '30';
+            }
+            
+            // Reset stats
+            speedStat.textContent = '0';
+            accuracyStat.textContent = '100';
+            charsStat.textContent = '0';
+            errorsStat.textContent = '0';
+        }
+        
+        // Initialize app
+        init();
+    </script>
 </body>
 </html>
